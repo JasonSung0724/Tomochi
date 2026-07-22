@@ -69,6 +69,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 startingUpdater: true, updaterDelegate: nil, userDriverDelegate: nil
             )
         }
+        warnIfTranslocated()
+    }
+
+    /// Gatekeeper runs quarantined apps from a randomized read-only path,
+    /// which breaks Sparkle self-updates. Tell the user how to fix it.
+    private func warnIfTranslocated() {
+        guard Bundle.main.bundlePath.contains("/AppTranslocation/") else { return }
+        let alert = NSAlert()
+        alert.messageText = "Move Tomochi to Applications"
+        alert.informativeText = "Tomochi is running from a temporary location (translocated by macOS), so automatic updates can't work. Quit, move Tomochi.app to /Applications in Finder, and launch it from there."
+        alert.alertStyle = .warning
+        alert.runModal()
     }
 
     func checkForUpdates() {
