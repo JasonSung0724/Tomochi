@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CFBundleName</key><string>Tomochi</string>
+	<key>CFBundleDisplayName</key><string>Tomochi</string>
+	<key>CFBundleIdentifier</key><string>io.github.jasonsung0724.tomochi</string>
+	<key>CFBundleExecutable</key><string>Tomochi</string>
+	<key>CFBundleIconFile</key><string>AppIcon</string>
+	<key>CFBundlePackageType</key><string>APPL</string>
+	<key>CFBundleShortVersionString</key><string>0.1.0</string>
+	<key>CFBundleVersion</key><string>0.1.0</string>
+	<key>SUFeedURL</key><string>https://github.com/JasonSung0724/Tomochi/releases/latest/download/appcast.xml</string>
+	<key>SUPublicEDKey</key><string>WGwpRhAwP8hyl+1txsHCPUFRjBeeMN7N60+1JffW9+w=</string>
+	<key>SUEnableAutomaticChecks</key><true/>
+	<key>LSMinimumSystemVersion</key><string>14.0</string>
+	<key>NSPrincipalClass</key><string>NSApplication</string>
+	<key>NSHighResolutionCapable</key><true/>
+</dict>
+</plist>

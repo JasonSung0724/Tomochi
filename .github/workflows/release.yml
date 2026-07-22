@@ -1,0 +1,98 @@
+name: Release
+
+# Push to main with a new CFBundleShortVersionString in Info.plist and this
+# workflow tags, builds, and publishes the release automatically. Pushes that
+# don't change the version are skipped.
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+env:
+  SPARKLE_VERSION: "2.9.4"
+
+jobs:
+  release:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check whether this version is already released
+        id: version
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          VERSION="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' Info.plist)"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          STATE="$(gh release view "v$VERSION" --json isDraft --jq .isDraft 2>/dev/null || echo missing)"
+          if [ "$STATE" = "false" ]; then
+            echo "v$VERSION already released — nothing to do."
+            echo "new=false" >> "$GITHUB_OUTPUT"
+          else
+            # A leftover draft means a previous run died mid-publish: retry cleanly.
+            if [ "$STATE" = "true" ]; then gh release delete "v$VERSION" --yes; fi
+            echo "v$VERSION is new — releasing."
+            echo "new=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Stamp CFBundleVersion
+        if: steps.version.outputs.new == 'true'
+        run: |
+          /usr/libexec/PlistBuddy -c "Set :CFBundleVersion ${{ steps.version.outputs.version }}" Info.plist
+
+      - name: Build universal Tomochi.zip and Tomochi.dmg
+        if: steps.version.outputs.new == 'true'
+        run: UNIVERSAL=1 bash scripts/release.sh
+
+      - name: Generate signed Sparkle appcast
+        if: steps.version.outputs.new == 'true'
+        env:
+          SPARKLE_ED_PRIVATE_KEY: ${{ secrets.SPARKLE_ED_PRIVATE_KEY }}
+        run: |
+          if [ -z "$SPARKLE_ED_PRIVATE_KEY" ]; then
+            echo "❌ SPARKLE_ED_PRIVATE_KEY secret is missing — clients could never verify the update." >&2
+            exit 1
+          fi
+          curl -fsSL -o sparkle.tar.xz \
+            "https://github.com/sparkle-project/Sparkle/releases/download/${SPARKLE_VERSION}/Sparkle-${SPARKLE_VERSION}.tar.xz"
+          mkdir sparkle-tools && tar -xJf sparkle.tar.xz -C sparkle-tools
+          printf '%s' "$SPARKLE_ED_PRIVATE_KEY" > ed_key
+          mkdir appcast && cp dist/Tomochi.zip appcast/
+          ./sparkle-tools/bin/generate_appcast \
+            --ed-key-file ed_key \
+            --download-url-prefix "https://github.com/${GITHUB_REPOSITORY}/releases/download/v${{ steps.version.outputs.version }}/" \
+            --link "https://github.com/${GITHUB_REPOSITORY}" \
+            appcast
+          rm ed_key
+          grep -q 'sparkle:edSignature' appcast/appcast.xml || {
+            echo "❌ appcast.xml has no EdDSA signature — existing installs would reject the update." >&2
+            exit 1
+          }
+          cp appcast/appcast.xml dist/
+
+      - name: Publish GitHub Release (draft → verify assets → publish)
+        if: steps.version.outputs.new == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          V="v${{ steps.version.outputs.version }}"
+          gh release create "$V" \
+            dist/Tomochi.zip dist/Tomochi.dmg dist/appcast.xml \
+            --draft \
+            --target "$GITHUB_SHA" \
+            --title "Tomochi $V" \
+            --generate-notes
+          COUNT="$(gh release view "$V" --json assets --jq '.assets | length')"
+          if [ "$COUNT" != "3" ]; then
+            echo "❌ Expected 3 assets, found $COUNT — leaving the release as a draft." >&2
+            exit 1
+          fi
+          gh release edit "$V" --draft=false
+          echo "✓ $V published with verified assets."
