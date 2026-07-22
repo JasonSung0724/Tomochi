@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.1
+
+- App icon (a very happy cat)
+- Warn when running translocated (from DMG), where auto-update can't work
+
 ## 0.1.0
 
 - Initial release

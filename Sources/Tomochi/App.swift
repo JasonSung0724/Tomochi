@@ -70,6 +70,27 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             )
         }
         warnIfTranslocated()
+        snapshotIfRequested()
+    }
+
+    /// Dev tool: TOMOCHI_SNAPSHOT=/path.png renders the main window to a PNG
+    /// (no screen-recording permission needed) and exits. Used for README shots.
+    private func snapshotIfRequested() {
+        guard let path = ProcessInfo.processInfo.environment["TOMOCHI_SNAPSHOT"] else { return }
+        // Translucent materials render inconsistently offscreen; a fixed light
+        // appearance keeps the capture uniform.
+        NSApp.appearance = NSAppearance(named: .aqua)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2.5) {
+            if let window = NSApp.windows.max(by: { $0.frame.width < $1.frame.width }),
+               let view = window.contentView,
+               let rep = view.bitmapImageRepForCachingDisplay(in: view.bounds) {
+                view.cacheDisplay(in: view.bounds, to: rep)
+                if let png = rep.representation(using: .png, properties: [:]) {
+                    try? png.write(to: URL(fileURLWithPath: path))
+                }
+            }
+            NSApp.terminate(nil)
+        }
     }
 
     /// Gatekeeper runs quarantined apps from a randomized read-only path,

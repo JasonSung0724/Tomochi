@@ -12,6 +12,8 @@ your habits the more you use it.
 ![Platform](https://img.shields.io/badge/platform-macOS%2014%2B-blue)
 ![License](https://img.shields.io/github/license/JasonSung0724/Tomochi)
 
+![Tomochi screenshot](docs/screenshot.png)
+
 ## Features
 
 - ✅ **Todos** — categories, priorities, due dates, notes, smart lists (All / Today / Completed)
