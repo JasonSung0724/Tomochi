@@ -7,47 +7,41 @@ struct TodoListView: View {
 
     @State private var newTitle = ""
     @State private var editingTodo: TodoItem?
+    @FocusState private var addFieldFocused: Bool
 
     var body: some View {
         VStack(spacing: 0) {
-            HStack {
-                Image(systemName: "plus.circle.fill")
-                    .foregroundStyle(.secondary)
-                TextField("Add a task…", text: $newTitle)
-                    .textFieldStyle(.plain)
-                    .onSubmit(addTodo)
-            }
-            .padding(10)
-
-            Divider()
-
-            if filteredTodos.isEmpty {
-                ContentUnavailableView(
-                    emptyTitle,
-                    systemImage: "cat"
-                )
-                .frame(maxHeight: .infinity)
-            } else {
-                List {
+            ScrollView {
+                LazyVStack(spacing: 8) {
+                    addCard
                     ForEach(filteredTodos) { todo in
-                        TodoRowView(
-                            todo: todo,
-                            onEdit: { editingTodo = todo }
-                        )
+                        TodoCard(todo: todo, onEdit: { editingTodo = todo })
+                    }
+                    if filteredTodos.isEmpty {
+                        emptyState
                     }
                 }
-                .listStyle(.inset)
+                .padding(14)
             }
+            .background(
+                ZStack {
+                    Color(nsColor: .windowBackgroundColor)
+                    Color.primary.opacity(0.045)
+                }
+            )
 
             Divider()
             HStack {
-                Text("Today: \(store.todayFocusMinutes) min focused · \(store.todayCompletedWorkSessions) pomodoros")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                Label("\(store.todayFocusMinutes) min focused today", systemImage: "timer")
+                Text("·")
+                Label("\(store.todayCompletedWorkSessions) pomodoros", systemImage: "cat")
                 Spacer()
             }
-            .padding(.horizontal, 10)
-            .padding(.vertical, 6)
+            .font(.caption)
+            .foregroundStyle(.secondary)
+            .padding(.horizontal, 14)
+            .padding(.vertical, 7)
+            .background(.bar)
         }
         .navigationTitle(title)
         .sheet(item: $editingTodo) { todo in
@@ -56,18 +50,50 @@ struct TodoListView: View {
         }
     }
 
+    private var addCard: some View {
+        HStack(spacing: 10) {
+            Image(systemName: "plus.circle.fill")
+                .font(.title3)
+                .foregroundStyle(Color.accentColor)
+            TextField("Add a task…", text: $newTitle)
+                .textFieldStyle(.plain)
+                .focused($addFieldFocused)
+                .onSubmit(addTodo)
+        }
+        .padding(12)
+        .background(
+            RoundedRectangle(cornerRadius: 10)
+                .fill(Color(nsColor: .controlBackgroundColor))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 10)
+                        .strokeBorder(
+                            addFieldFocused ? Color.accentColor.opacity(0.5) : Color.primary.opacity(0.06),
+                            style: StrokeStyle(lineWidth: 1, dash: addFieldFocused ? [] : [5])
+                        )
+                )
+        )
+    }
+
+    private var emptyState: some View {
+        VStack(spacing: 8) {
+            Image(systemName: "cat")
+                .font(.system(size: 42))
+                .foregroundStyle(.tertiary)
+            Text(selection == .completed ? "Nothing completed yet" : "All clear")
+                .foregroundStyle(.secondary)
+        }
+        .padding(.top, 60)
+    }
+
     private var title: String {
         switch selection {
         case .all: return "All"
         case .today: return "Today"
         case .completed: return "Completed"
+        case .notes: return "Notes"
         case .category(let id):
             return store.categories.first { $0.id == id }?.name ?? "Category"
         }
-    }
-
-    private var emptyTitle: String {
-        selection == .completed ? "Nothing completed yet" : "No tasks"
     }
 
     private var filteredTodos: [TodoItem] {
@@ -80,7 +106,7 @@ struct TodoListView: View {
                 guard !todo.isCompleted, let due = todo.dueDate else { return false }
                 return Calendar.current.isDateInToday(due) || due < Date()
             }
-        case .completed:
+        case .completed, .notes:
             return store.todos
                 .filter(\.isCompleted)
                 .sorted { ($0.completedAt ?? .distantPast) > ($1.completedAt ?? .distantPast) }
@@ -117,16 +143,23 @@ struct TodoListView: View {
     }
 }
 
-struct TodoRowView: View {
+/// A todo rendered as a ticket-style card: priority color spine on the left,
+/// title + metadata chips, quick pomodoro action on hover.
+struct TodoCard: View {
     @EnvironmentObject var store: DataStore
     @EnvironmentObject var pomodoro: PomodoroTimer
     let todo: TodoItem
     let onEdit: () -> Void
+    @State private var hovering = false
 
     var body: some View {
-        HStack(spacing: 10) {
+        HStack(spacing: 12) {
+            Capsule()
+                .fill(todo.isCompleted ? Color.green.opacity(0.5) : todo.priority.color)
+                .frame(width: 4)
+
             Button {
-                store.toggleComplete(todo)
+                withAnimation(.snappy) { store.toggleComplete(todo) }
             } label: {
                 Image(systemName: todo.isCompleted ? "checkmark.circle.fill" : "circle")
                     .font(.title3)
@@ -134,51 +167,63 @@ struct TodoRowView: View {
             }
             .buttonStyle(.plain)
 
-            Circle()
-                .fill(todo.priority.color)
-                .frame(width: 7, height: 7)
-
-            VStack(alignment: .leading, spacing: 2) {
+            VStack(alignment: .leading, spacing: 5) {
                 Text(todo.title)
+                    .fontWeight(.medium)
                     .strikethrough(todo.isCompleted)
                     .foregroundStyle(todo.isCompleted ? .secondary : .primary)
+                    .lineLimit(2)
                 HStack(spacing: 6) {
                     if let category = store.category(for: todo) {
-                        Text(category.name)
-                            .font(.caption2)
-                            .padding(.horizontal, 5)
-                            .padding(.vertical, 1)
-                            .background(category.color.opacity(0.18), in: Capsule())
-                            .foregroundStyle(category.color)
+                        Chip(text: category.name, icon: category.icon, color: category.color)
                     }
                     if let due = todo.dueDate {
-                        Label(due.formatted(.dateTime.month().day().hour().minute()),
-                              systemImage: "calendar")
-                            .font(.caption2)
-                            .foregroundStyle(due < Date() && !todo.isCompleted ? .red : .secondary)
+                        Chip(
+                            text: due.formatted(.dateTime.month(.abbreviated).day().hour().minute()),
+                            icon: "calendar",
+                            color: due < Date() && !todo.isCompleted ? .red : .secondary
+                        )
                     }
                     if !todo.notes.isEmpty {
                         Image(systemName: "note.text")
                             .font(.caption2)
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(.tertiary)
                     }
                 }
             }
 
-            Spacer()
+            Spacer(minLength: 8)
 
-            Button {
-                pomodoro.linkedTodo = todo
-                pomodoro.reset()
-                pomodoro.start()
-            } label: {
-                Image(systemName: "timer")
+            if hovering && !todo.isCompleted {
+                Button {
+                    pomodoro.linkedTodo = todo
+                    pomodoro.reset()
+                    pomodoro.start()
+                } label: {
+                    Image(systemName: "play.circle.fill")
+                        .font(.title2)
+                        .foregroundStyle(Color.accentColor)
+                }
+                .buttonStyle(.plain)
+                .help("Start a pomodoro for this task")
+                .transition(.opacity)
             }
-            .buttonStyle(.plain)
-            .foregroundStyle(.secondary)
-            .help("Start a pomodoro for this task")
         }
-        .padding(.vertical, 3)
+        .padding(.vertical, 11)
+        .padding(.horizontal, 12)
+        .background(
+            RoundedRectangle(cornerRadius: 10)
+                .fill(Color(nsColor: .controlBackgroundColor))
+                .shadow(color: .black.opacity(hovering ? 0.10 : 0.05), radius: hovering ? 4 : 2, y: 1)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 10)
+                .strokeBorder(Color.primary.opacity(0.06))
+        )
+        .opacity(todo.isCompleted ? 0.65 : 1)
+        .onHover { h in
+            withAnimation(.easeOut(duration: 0.12)) { hovering = h }
+        }
         .contentShape(Rectangle())
         .onTapGesture(count: 2, perform: onEdit)
         .contextMenu {
@@ -207,6 +252,27 @@ struct TodoRowView: View {
         var t = todo
         t.categoryId = categoryId
         store.updateTodo(t)
+    }
+}
+
+struct Chip: View {
+    let text: String
+    var icon: String?
+    let color: Color
+
+    var body: some View {
+        HStack(spacing: 3) {
+            if let icon {
+                Image(systemName: icon)
+                    .font(.system(size: 9))
+            }
+            Text(text)
+                .font(.caption2)
+        }
+        .padding(.horizontal, 7)
+        .padding(.vertical, 2.5)
+        .background(color.opacity(0.14), in: Capsule())
+        .foregroundStyle(color)
     }
 }
 

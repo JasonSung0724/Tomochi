@@ -18,6 +18,8 @@ your habits the more you use it.
 
 - ✅ **Todos** — categories, priorities, due dates, notes, smart lists (All / Today / Completed)
 - 🐱 **Pomodoro timer** — menu-bar cat countdown, task-linked sessions, daily focus stats
+- 📝 **Notes** — Markdown notes with drag-and-drop image attachments, readable
+  and writable by the AI too
 - ✨ **AI assistant** — "I need to finish the report and buy cat food" → tasks
   created, categorized, and scheduled for you
 - 🧠 **Self-learning** — the AI records your categorization habits in a memory
@@ -122,7 +124,7 @@ Focused on what actually helps office workers and students get things done:
 - Syllabus / assignment-sheet import (PDF → deadline-tracked tasks) for students
 
 **Study tools**
-- Notes with image attachments and AI summarization
+- AI note summarization
 - Flashcards generated from your notes, with spaced-repetition review reminders
 - Exam countdowns and study-session planning
 

@@ -20,6 +20,8 @@ struct SidebarView: View {
                     .badge(todayCount)
                 Label("Completed", systemImage: "checkmark.circle")
                     .tag(SidebarItem.completed)
+                Label("Notes", systemImage: "note.text")
+                    .tag(SidebarItem.notes)
             }
             Section("Categories") {
                 ForEach(store.categories) { category in

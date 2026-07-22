@@ -5,6 +5,7 @@ enum SidebarItem: Hashable {
     case all
     case today
     case completed
+    case notes
     case category(UUID)
 }
 
@@ -13,7 +14,8 @@ struct ContentView: View {
     @EnvironmentObject var pomodoro: PomodoroTimer
     @EnvironmentObject var chat: AIChatModel
 
-    @State private var selection: SidebarItem? = .all
+    @State private var selection: SidebarItem? =
+        ProcessInfo.processInfo.environment["TOMOCHI_START_TAB"] == "notes" ? .notes : .all
     @State private var showAIPanel = true
     @State private var showPomodoro = false
 
@@ -28,7 +30,11 @@ struct ContentView: View {
                 }
                 PomodoroBar(showFull: $showPomodoro)
                 Divider()
-                TodoListView(selection: selection ?? .all)
+                if selection == .notes {
+                    NotesView()
+                } else {
+                    TodoListView(selection: selection ?? .all)
+                }
             }
         }
         .inspector(isPresented: $showAIPanel) {

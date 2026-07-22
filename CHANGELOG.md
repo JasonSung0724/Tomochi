@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.2
+
+- Markdown notes with drag-and-drop image attachments, live-synced with the
+  AI workspace
+- Task list redesigned as ticket-style cards (priority spine, category and
+  due-date chips, hover quick actions)
+
 ## 0.1.1
 
 - App icon (a very happy cat)
