@@ -34,6 +34,9 @@ struct TomochiApp: App {
                     appDelegate.checkForUpdates()
                 }
                 .disabled(!appDelegate.canCheckForUpdates)
+                Button("Setup Assistant…") {
+                    NotificationCenter.default.post(name: .showSetupAssistant, object: nil)
+                }
             }
         }
 
@@ -84,7 +87,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // appearance keeps the capture uniform.
         NSApp.appearance = NSAppearance(named: .aqua)
         DispatchQueue.main.asyncAfter(deadline: .now() + 2.5) {
-            if let window = NSApp.windows.max(by: { $0.frame.width < $1.frame.width }),
+            // Prefer an open sheet (e.g. the setup assistant) over the
+            // window behind it.
+            if let window = NSApp.windows.first(where: { $0.isSheet })
+                ?? NSApp.keyWindow
+                ?? NSApp.windows.max(by: { $0.frame.width < $1.frame.width }),
                let view = window.contentView,
                let rep = view.bitmapImageRepForCachingDisplay(in: view.bounds) {
                 view.cacheDisplay(in: view.bounds, to: rep)
@@ -99,6 +106,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     /// Gatekeeper runs quarantined apps from a randomized read-only path,
     /// which breaks Sparkle self-updates. Tell the user how to fix it.
     private func warnIfTranslocated() {
+        // The first-launch setup assistant surfaces this itself.
+        guard UserDefaults.standard.bool(forKey: "hasCompletedOnboarding") else { return }
         guard Bundle.main.bundlePath.contains("/AppTranslocation/") else { return }
         let alert = NSAlert()
         alert.messageText = "Move Tomochi to Applications"

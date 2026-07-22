@@ -57,6 +57,11 @@ git clone https://github.com/JasonSung0724/Tomochi && cd Tomochi
 make run
 ```
 
+On first launch a setup assistant walks you through the rest: install
+location, notifications, and installing/signing in to the AI engine. Reopen it
+anytime from **Tomochi → Setup Assistant…**. No Accessibility or Screen
+Recording permissions are ever requested.
+
 Updates are automatic (Sparkle) — the app checks for new releases and updates
 itself in place.
 

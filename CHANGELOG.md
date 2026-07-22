@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.3
+
+- First-launch setup assistant: install-location check, notification
+  permission, AI engine detection with one-click install command
+- Reopen anytime via Tomochi → Setup Assistant…
+
 ## 0.1.2
 
 - Markdown notes with drag-and-drop image attachments, live-synced with the

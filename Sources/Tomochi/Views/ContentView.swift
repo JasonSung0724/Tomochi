@@ -18,6 +18,8 @@ struct ContentView: View {
         ProcessInfo.processInfo.environment["TOMOCHI_START_TAB"] == "notes" ? .notes : .all
     @State private var showAIPanel = true
     @State private var showPomodoro = false
+    @State private var showOnboarding = false
+    @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false
 
     var body: some View {
         NavigationSplitView {
@@ -55,6 +57,19 @@ struct ContentView: View {
             PomodoroView()
                 .environmentObject(pomodoro)
                 .environmentObject(store)
+        }
+        .sheet(isPresented: $showOnboarding) {
+            OnboardingView()
+        }
+        .onAppear {
+            switch ProcessInfo.processInfo.environment["TOMOCHI_ONBOARDING"] {
+            case "force": showOnboarding = true
+            case "skip": break
+            default: if !hasCompletedOnboarding { showOnboarding = true }
+            }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .showSetupAssistant)) { _ in
+            showOnboarding = true
         }
     }
 }
