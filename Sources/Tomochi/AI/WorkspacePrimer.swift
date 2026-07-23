@@ -5,7 +5,7 @@ import Foundation
 /// for editing it, and the auto-learning loop via memory/MEMORY.md.
 enum WorkspacePrimer {
     /// Bump when INSTRUCTIONS changes so existing workspaces get the update.
-    private static let version = 4
+    private static let version = 5
     private static let versionKey = "workspacePrimerVersion"
 
     static func primeIfNeeded() {
@@ -104,6 +104,25 @@ enum WorkspacePrimer {
     4. After finishing, summarize what you did in one or two sentences.
     5. Resolve relative dates ("today", "tomorrow", "Friday") against the current
        system time.
+
+    ## Braindumps: organizing long descriptions (important)
+
+    When the user pastes a long, mixed description — project plans, meeting
+    notes, scattered thoughts — split it yourself; don't ask them to sort it:
+
+    1. **Actionable items** → `data/todos.json`, each categorized (consult
+       MEMORY.md and existing categories), with `priority` and `dueDate`
+       whenever a time is stated or implied.
+    2. **Reference knowledge** (decisions, facts, links, background, specs)
+       → the knowledge base in `notes/`: one topic per file, kebab-case
+       filename, clear `#` heading. If a note on that topic already exists,
+       merge into it instead of creating fragments.
+    3. **Personal habits/preferences you learned** → `memory/MEMORY.md`.
+    4. End with a short recap of what went where, e.g. "Added 3 todos to
+       Work; saved the meeting decisions to notes/q3-planning.md."
+
+    Keep note headings descriptive — the app's search matches note content
+    and titles.
 
     ## Things you can do (examples)
 

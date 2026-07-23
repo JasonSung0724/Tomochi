@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.1.5
+
+- Fixed broken window layout (Notes pane collapsing to the bottom, skewed
+  content, unclickable sidebar) caused by HSplitView inside the split view
+- Global search across tasks and note contents (toolbar search field)
+- New-category field now cancels when it loses focus instead of sticking
+- AI now organizes long braindumps by itself: actionable items → todos,
+  reference knowledge → notes, habits → memory, with a recap of what went
+  where
+
 ## 0.1.4
 
 - Fixed sluggish button response: task cards no longer re-render on every

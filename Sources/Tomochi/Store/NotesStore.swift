@@ -14,6 +14,8 @@ struct Note: Identifiable, Equatable {
 @MainActor
 final class NotesStore: ObservableObject {
     @Published var notes: [Note] = []
+    /// Set by search results to open a specific note when the Notes tab shows.
+    @Published var pendingOpen: String?
 
     private var watcher: FileWatcher?
     private var suppressReloadUntil = Date.distantPast
@@ -92,6 +94,23 @@ final class NotesStore: ObservableObject {
         try? FileManager.default.removeItem(
             at: Paths.notesDir.appendingPathComponent(note.filename))
         notes.removeAll { $0.filename == note.filename }
+    }
+
+    /// Case-insensitive content search. Returns matching notes with a snippet
+    /// of the first matching line.
+    func search(_ query: String) -> [(note: Note, snippet: String)] {
+        let q = query.lowercased()
+        guard !q.isEmpty else { return [] }
+        return notes.compactMap { note in
+            let content = self.content(of: note)
+            if let line = content.split(separator: "\n").first(where: { $0.lowercased().contains(q) }) {
+                return (note, String(line.trimmingCharacters(in: CharacterSet(charactersIn: "# ").union(.whitespaces)).prefix(90)))
+            }
+            if note.title.lowercased().contains(q) {
+                return (note, "")
+            }
+            return nil
+        }
     }
 
     /// Copies a file into attachments/ (deduplicating names) and returns the

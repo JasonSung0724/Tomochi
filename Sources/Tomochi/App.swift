@@ -83,9 +83,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     /// (no screen-recording permission needed) and exits. Used for README shots.
     private func snapshotIfRequested() {
         guard let path = ProcessInfo.processInfo.environment["TOMOCHI_SNAPSHOT"] else { return }
-        // Translucent materials render inconsistently offscreen; a fixed light
-        // appearance keeps the capture uniform.
-        NSApp.appearance = NSAppearance(named: .aqua)
+        // Translucent materials render inconsistently offscreen; a fixed
+        // appearance keeps the capture uniform (dark via TOMOCHI_SNAPSHOT_DARK).
+        let dark = ProcessInfo.processInfo.environment["TOMOCHI_SNAPSHOT_DARK"] != nil
+        NSApp.appearance = NSAppearance(named: dark ? .darkAqua : .aqua)
         DispatchQueue.main.asyncAfter(deadline: .now() + 4.0) {
             // Prefer an open sheet (e.g. the setup assistant) over the
             // window behind it.

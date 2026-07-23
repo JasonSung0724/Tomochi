@@ -8,6 +8,7 @@ struct SidebarView: View {
     @State private var isAddingCategory = false
     @State private var renamingCategory: TodoCategory?
     @State private var renameText = ""
+    @FocusState private var addFieldFocused: Bool
 
     var body: some View {
         List(selection: $selection) {
@@ -29,10 +30,7 @@ struct SidebarView: View {
                         Text(category.name)
                     } icon: {
                         Image(systemName: category.icon)
-                            .font(.system(size: 11, weight: .semibold))
-                            .foregroundStyle(.white)
-                            .frame(width: 20, height: 20)
-                            .background(category.color.gradient, in: RoundedRectangle(cornerRadius: 6))
+                            .foregroundStyle(category.color)
                     }
                     .tag(SidebarItem.category(category.id))
                     .badge(count(for: category))
@@ -48,11 +46,16 @@ struct SidebarView: View {
                 }
                 if isAddingCategory {
                     TextField("Category name", text: $newCategoryName)
+                        .focused($addFieldFocused)
                         .onSubmit { commitNewCategory() }
-                        .onExitCommand { isAddingCategory = false }
+                        .onExitCommand { cancelNewCategory() }
+                        .onChange(of: addFieldFocused) {
+                            if !addFieldFocused { cancelNewCategory() }
+                        }
                 } else {
                     Button {
                         isAddingCategory = true
+                        addFieldFocused = true
                     } label: {
                         Label("New Category", systemImage: "plus")
                             .foregroundStyle(.secondary)
@@ -95,6 +98,10 @@ struct SidebarView: View {
         if !name.isEmpty {
             store.addCategory(name: name)
         }
+        cancelNewCategory()
+    }
+
+    private func cancelNewCategory() {
         newCategoryName = ""
         isAddingCategory = false
     }

@@ -19,6 +19,7 @@ struct ContentView: View {
     @State private var showAIPanel = true
     @State private var showPomodoro = false
     @State private var showOnboarding = false
+    @State private var searchText = ""
     @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false
 
     var body: some View {
@@ -32,13 +33,19 @@ struct ContentView: View {
                 }
                 PomodoroBar(showFull: $showPomodoro)
                 Divider()
-                if selection == .notes {
+                if !searchText.trimmingCharacters(in: .whitespaces).isEmpty {
+                    SearchResultsView(
+                        query: searchText.trimmingCharacters(in: .whitespaces),
+                        selection: $selection
+                    )
+                } else if selection == .notes {
                     NotesView()
                 } else {
                     TodoListView(selection: selection ?? .all)
                 }
             }
         }
+        .searchable(text: $searchText, prompt: "Search tasks and notes")
         .inspector(isPresented: $showAIPanel) {
             AIChatView()
                 .inspectorColumnWidth(min: 280, ideal: 340, max: 480)

@@ -8,19 +8,30 @@ struct NotesView: View {
     @State private var saveTask: Task<Void, Never>?
 
     var body: some View {
-        HSplitView {
+        HStack(spacing: 0) {
             noteList
-                .frame(minWidth: 200, idealWidth: 230, maxWidth: 320)
+                .frame(width: 230)
+            Divider()
             editor
-                .frame(minWidth: 380, maxWidth: .infinity)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .onAppear {
+            consumePendingOpen()
             if selected == nil { select(notesStore.notes.first) }
         }
+        .onChange(of: notesStore.pendingOpen) { consumePendingOpen() }
         .onChange(of: notesStore.notes) {
             if let selected, !notesStore.notes.contains(where: { $0.filename == selected.filename }) {
                 select(notesStore.notes.first)
             }
+        }
+    }
+
+    private func consumePendingOpen() {
+        guard let filename = notesStore.pendingOpen else { return }
+        notesStore.pendingOpen = nil
+        if let note = notesStore.notes.first(where: { $0.filename == filename }) {
+            select(note)
         }
     }
 
