@@ -86,7 +86,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // Translucent materials render inconsistently offscreen; a fixed light
         // appearance keeps the capture uniform.
         NSApp.appearance = NSAppearance(named: .aqua)
-        DispatchQueue.main.asyncAfter(deadline: .now() + 2.5) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 4.0) {
             // Prefer an open sheet (e.g. the setup assistant) over the
             // window behind it.
             if let window = NSApp.windows.first(where: { $0.isSheet })

@@ -13,8 +13,6 @@ final class SetupChecks: ObservableObject {
     enum InstallLocation { case ok, translocated, elsewhere, devBuild }
 
     @Published var notif: NotifState = .unavailable
-    @Published var claudeInstalled = false
-    @Published var codexInstalled = false
 
     private var hasBundle: Bool { Bundle.main.bundleIdentifier != nil }
 
@@ -27,8 +25,7 @@ final class SetupChecks: ObservableObject {
     }
 
     func refresh() {
-        claudeInstalled = AIProviderKind.claude.isInstalled
-        codexInstalled = AIProviderKind.codex.isInstalled
+        AIAvailability.shared.refresh()
         guard hasBundle else {
             notif = .unavailable
             return
@@ -62,6 +59,7 @@ struct OnboardingView: View {
     @Environment(\.dismiss) private var dismiss
     @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false
     @StateObject private var checks = SetupChecks()
+    @ObservedObject private var availability = AIAvailability.shared
     @State private var page =
         Int(ProcessInfo.processInfo.environment["TOMOCHI_ONBOARDING_PAGE"] ?? "") ?? 0
 
@@ -189,7 +187,7 @@ struct OnboardingView: View {
 
     @ViewBuilder
     private var aiRow: some View {
-        if checks.claudeInstalled || checks.codexInstalled {
+        if !availability.installed.isEmpty {
             CheckRow(icon: "sparkles",
                      title: "AI engine ready (\(installedEngines))",
                      state: .ok,
@@ -203,9 +201,9 @@ struct OnboardingView: View {
     }
 
     private var installedEngines: String {
-        [checks.claudeInstalled ? "Claude Code" : nil,
-         checks.codexInstalled ? "Codex" : nil]
-            .compactMap { $0 }
+        AIProviderKind.allCases
+            .filter { availability.isInstalled($0) }
+            .map(\.displayName)
             .joined(separator: ", ")
     }
 

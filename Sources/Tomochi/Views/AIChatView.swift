@@ -102,15 +102,24 @@ struct ChatBubble: View {
             HStack {
                 Spacer(minLength: 30)
                 Text(message.text)
-                    .padding(8)
-                    .background(.blue.opacity(0.85), in: RoundedRectangle(cornerRadius: 10))
+                    .padding(.horizontal, 11)
+                    .padding(.vertical, 7)
+                    .background(
+                        LinearGradient(
+                            colors: [Theme.accentSoft, Theme.accent],
+                            startPoint: .top, endPoint: .bottom
+                        ),
+                        in: RoundedRectangle(cornerRadius: 13)
+                    )
                     .foregroundStyle(.white)
             }
         case .assistant:
             HStack {
                 Text(LocalizedStringKey(message.text))
-                    .padding(8)
-                    .background(.quaternary.opacity(0.6), in: RoundedRectangle(cornerRadius: 10))
+                    .padding(.horizontal, 11)
+                    .padding(.vertical, 7)
+                    .background(Theme.cardBackground, in: RoundedRectangle(cornerRadius: 13))
+                    .overlay(RoundedRectangle(cornerRadius: 13).strokeBorder(Theme.hairline))
                     .textSelection(.enabled)
                 Spacer(minLength: 30)
             }
@@ -118,6 +127,9 @@ struct ChatBubble: View {
             Label(message.text, systemImage: "wrench.and.screwdriver")
                 .font(.caption)
                 .foregroundStyle(.secondary)
+                .padding(.horizontal, 8)
+                .padding(.vertical, 3)
+                .background(Color.primary.opacity(0.05), in: Capsule())
         case .error:
             Label(message.text, systemImage: "exclamationmark.triangle")
                 .font(.caption)

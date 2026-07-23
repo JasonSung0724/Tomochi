@@ -29,7 +29,10 @@ struct SidebarView: View {
                         Text(category.name)
                     } icon: {
                         Image(systemName: category.icon)
-                            .foregroundStyle(category.color)
+                            .font(.system(size: 11, weight: .semibold))
+                            .foregroundStyle(.white)
+                            .frame(width: 20, height: 20)
+                            .background(category.color.gradient, in: RoundedRectangle(cornerRadius: 6))
                     }
                     .tag(SidebarItem.category(category.id))
                     .badge(count(for: category))

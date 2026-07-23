@@ -5,17 +5,24 @@ struct TodoListView: View {
     @EnvironmentObject var pomodoro: PomodoroTimer
     let selection: SidebarItem
 
-    @State private var newTitle = ""
     @State private var editingTodo: TodoItem?
-    @FocusState private var addFieldFocused: Bool
 
     var body: some View {
         VStack(spacing: 0) {
             ScrollView {
                 LazyVStack(spacing: 8) {
-                    addCard
+                    AddTaskField { title in addTodo(title) }
                     ForEach(filteredTodos) { todo in
-                        TodoCard(todo: todo, onEdit: { editingTodo = todo })
+                        TodoCard(
+                            todo: todo,
+                            category: store.category(for: todo),
+                            onEdit: { editingTodo = todo },
+                            onStartFocus: {
+                                pomodoro.linkedTodo = todo
+                                pomodoro.reset()
+                                pomodoro.start()
+                            }
+                        )
                     }
                     if filteredTodos.isEmpty {
                         emptyState
@@ -23,25 +30,10 @@ struct TodoListView: View {
                 }
                 .padding(14)
             }
-            .background(
-                ZStack {
-                    Color(nsColor: .windowBackgroundColor)
-                    Color.primary.opacity(0.045)
-                }
-            )
+            .background(Theme.canvas)
 
             Divider()
-            HStack {
-                Label("\(store.todayFocusMinutes) min focused today", systemImage: "timer")
-                Text("·")
-                Label("\(store.todayCompletedWorkSessions) pomodoros", systemImage: "cat")
-                Spacer()
-            }
-            .font(.caption)
-            .foregroundStyle(.secondary)
-            .padding(.horizontal, 14)
-            .padding(.vertical, 7)
-            .background(.bar)
+            StatsFooter()
         }
         .navigationTitle(title)
         .sheet(item: $editingTodo) { todo in
@@ -50,39 +42,16 @@ struct TodoListView: View {
         }
     }
 
-    private var addCard: some View {
-        HStack(spacing: 10) {
-            Image(systemName: "plus.circle.fill")
-                .font(.title3)
-                .foregroundStyle(Color.accentColor)
-            TextField("Add a task…", text: $newTitle)
-                .textFieldStyle(.plain)
-                .focused($addFieldFocused)
-                .onSubmit(addTodo)
-        }
-        .padding(12)
-        .background(
-            RoundedRectangle(cornerRadius: 10)
-                .fill(Color(nsColor: .controlBackgroundColor))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 10)
-                        .strokeBorder(
-                            addFieldFocused ? Color.accentColor.opacity(0.5) : Color.primary.opacity(0.06),
-                            style: StrokeStyle(lineWidth: 1, dash: addFieldFocused ? [] : [5])
-                        )
-                )
-        )
-    }
-
     private var emptyState: some View {
-        VStack(spacing: 8) {
+        VStack(spacing: 10) {
             Image(systemName: "cat")
-                .font(.system(size: 42))
-                .foregroundStyle(.tertiary)
+                .font(.system(size: 44, weight: .light))
+                .foregroundStyle(Theme.accent.opacity(0.55))
             Text(selection == .completed ? "Nothing completed yet" : "All clear")
+                .font(.system(.title3, design: .rounded, weight: .medium))
                 .foregroundStyle(.secondary)
         }
-        .padding(.top, 60)
+        .padding(.top, 70)
     }
 
     private var title: String {
@@ -129,9 +98,7 @@ struct TodoListView: View {
         }
     }
 
-    private func addTodo() {
-        let title = newTitle.trimmingCharacters(in: .whitespaces)
-        guard !title.isEmpty else { return }
+    private func addTodo(_ title: String) {
         var categoryId: UUID?
         if case .category(let id) = selection { categoryId = id }
         var todo = TodoItem(title: title, categoryId: categoryId)
@@ -139,49 +106,100 @@ struct TodoListView: View {
             todo.dueDate = Calendar.current.date(bySettingHour: 18, minute: 0, second: 0, of: Date())
         }
         store.addTodo(todo)
-        newTitle = ""
     }
 }
 
-/// A todo rendered as a ticket-style card: priority color spine on the left,
-/// title + metadata chips, quick pomodoro action on hover.
+/// Isolated so keystrokes don't re-render the whole card list.
+private struct AddTaskField: View {
+    let onSubmit: (String) -> Void
+    @State private var text = ""
+    @FocusState private var focused: Bool
+
+    var body: some View {
+        HStack(spacing: 10) {
+            Image(systemName: "plus.circle.fill")
+                .font(.title3)
+                .foregroundStyle(Theme.accent)
+            TextField("Add a task…", text: $text)
+                .textFieldStyle(.plain)
+                .focused($focused)
+                .onSubmit {
+                    let title = text.trimmingCharacters(in: .whitespaces)
+                    guard !title.isEmpty else { return }
+                    onSubmit(title)
+                    text = ""
+                }
+        }
+        .padding(12)
+        .background(
+            RoundedRectangle(cornerRadius: 12)
+                .fill(Theme.cardBackground.opacity(focused ? 1 : 0.6))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 12)
+                .strokeBorder(
+                    focused ? Theme.accent.opacity(0.5) : Theme.hairline,
+                    style: StrokeStyle(lineWidth: 1, dash: focused ? [] : [5, 4])
+                )
+        )
+    }
+}
+
+/// Bottom stats bar — the only list-adjacent view that observes the store's
+/// session data, so pomodoro ticks never touch the cards above.
+private struct StatsFooter: View {
+    @EnvironmentObject var store: DataStore
+
+    var body: some View {
+        HStack(spacing: 8) {
+            Label("\(store.todayFocusMinutes) min focused today", systemImage: "timer")
+            Text("·")
+            Label("\(store.todayCompletedWorkSessions) pomodoros", systemImage: "cat")
+            Spacer()
+        }
+        .font(.caption)
+        .foregroundStyle(.secondary)
+        .padding(.horizontal, 14)
+        .padding(.vertical, 7)
+        .background(.bar)
+    }
+}
+
+/// A todo as a ticket-style card. Deliberately does NOT observe the pomodoro
+/// timer — with it in the environment, every card re-rendered on every tick.
 struct TodoCard: View {
     @EnvironmentObject var store: DataStore
-    @EnvironmentObject var pomodoro: PomodoroTimer
     let todo: TodoItem
+    let category: TodoCategory?
     let onEdit: () -> Void
+    let onStartFocus: () -> Void
     @State private var hovering = false
 
     var body: some View {
         HStack(spacing: 12) {
             Capsule()
-                .fill(todo.isCompleted ? Color.green.opacity(0.5) : todo.priority.color)
+                .fill(todo.isCompleted ? Color.green.opacity(0.45) : todo.priority.color)
                 .frame(width: 4)
 
-            Button {
+            CheckToggle(isOn: todo.isCompleted) {
                 withAnimation(.snappy) { store.toggleComplete(todo) }
-            } label: {
-                Image(systemName: todo.isCompleted ? "checkmark.circle.fill" : "circle")
-                    .font(.title3)
-                    .foregroundStyle(todo.isCompleted ? .green : Color(nsColor: .tertiaryLabelColor))
             }
-            .buttonStyle(.plain)
 
             VStack(alignment: .leading, spacing: 5) {
                 Text(todo.title)
-                    .fontWeight(.medium)
+                    .font(.system(.body, design: .rounded, weight: .medium))
                     .strikethrough(todo.isCompleted)
                     .foregroundStyle(todo.isCompleted ? .secondary : .primary)
                     .lineLimit(2)
                 HStack(spacing: 6) {
-                    if let category = store.category(for: todo) {
+                    if let category {
                         Chip(text: category.name, icon: category.icon, color: category.color)
                     }
                     if let due = todo.dueDate {
                         Chip(
                             text: due.formatted(.dateTime.month(.abbreviated).day().hour().minute()),
                             icon: "calendar",
-                            color: due < Date() && !todo.isCompleted ? .red : .secondary
+                            color: due < Date() && !todo.isCompleted ? Theme.priorityHigh : .secondary
                         )
                     }
                     if !todo.notes.isEmpty {
@@ -195,35 +213,20 @@ struct TodoCard: View {
             Spacer(minLength: 8)
 
             if hovering && !todo.isCompleted {
-                Button {
-                    pomodoro.linkedTodo = todo
-                    pomodoro.reset()
-                    pomodoro.start()
-                } label: {
+                Button(action: onStartFocus) {
                     Image(systemName: "play.circle.fill")
                         .font(.title2)
-                        .foregroundStyle(Color.accentColor)
+                        .foregroundStyle(Theme.accent)
                 }
                 .buttonStyle(.plain)
                 .help("Start a pomodoro for this task")
-                .transition(.opacity)
             }
         }
         .padding(.vertical, 11)
         .padding(.horizontal, 12)
-        .background(
-            RoundedRectangle(cornerRadius: 10)
-                .fill(Color(nsColor: .controlBackgroundColor))
-                .shadow(color: .black.opacity(hovering ? 0.10 : 0.05), radius: hovering ? 4 : 2, y: 1)
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: 10)
-                .strokeBorder(Color.primary.opacity(0.06))
-        )
-        .opacity(todo.isCompleted ? 0.65 : 1)
-        .onHover { h in
-            withAnimation(.easeOut(duration: 0.12)) { hovering = h }
-        }
+        .cardStyle(highlighted: hovering)
+        .opacity(todo.isCompleted ? 0.6 : 1)
+        .onHover { hovering = $0 }
         .contentShape(Rectangle())
         .onTapGesture(count: 2, perform: onEdit)
         .contextMenu {
@@ -255,6 +258,32 @@ struct TodoCard: View {
     }
 }
 
+/// Springy circular checkbox.
+private struct CheckToggle: View {
+    let isOn: Bool
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            ZStack {
+                Circle()
+                    .strokeBorder(isOn ? Color.clear : Color(nsColor: .tertiaryLabelColor),
+                                  lineWidth: 1.5)
+                    .background(Circle().fill(isOn ? Color.green : Color.clear))
+                if isOn {
+                    Image(systemName: "checkmark")
+                        .font(.system(size: 10, weight: .bold))
+                        .foregroundStyle(.white)
+                        .transition(.scale.combined(with: .opacity))
+                }
+            }
+            .frame(width: 20, height: 20)
+        }
+        .buttonStyle(.plain)
+        .animation(.spring(duration: 0.25), value: isOn)
+    }
+}
+
 struct Chip: View {
     let text: String
     var icon: String?
@@ -267,11 +296,11 @@ struct Chip: View {
                     .font(.system(size: 9))
             }
             Text(text)
-                .font(.caption2)
+                .font(.caption2.weight(.medium))
         }
         .padding(.horizontal, 7)
         .padding(.vertical, 2.5)
-        .background(color.opacity(0.14), in: Capsule())
+        .background(color.opacity(0.13), in: Capsule())
         .foregroundStyle(color)
     }
 }
@@ -290,7 +319,7 @@ struct TodoEditView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
             TextField("Title", text: $todo.title)
-                .font(.title3)
+                .font(.system(.title3, design: .rounded))
                 .textFieldStyle(.roundedBorder)
 
             HStack {

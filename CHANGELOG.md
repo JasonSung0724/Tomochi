@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.1.4
+
+- Fixed sluggish button response: task cards no longer re-render on every
+  timer tick, CLI detection no longer blocks the UI thread, and typing in
+  the add-task field no longer redraws the whole list
+- Design refresh: brand peach accent, rounded typography, gradient category
+  icons, springy checkboxes, capsule timer with progress ring, refined AI
+  chat bubbles
+- Fixed AI provider picker rendering blank
+
 ## 0.1.3
 
 - First-launch setup assistant: install-location check, notification

@@ -4,6 +4,7 @@ import AppKit
 struct SettingsView: View {
     @EnvironmentObject var pomodoro: PomodoroTimer
     @EnvironmentObject var chat: AIChatModel
+    @ObservedObject private var availability = AIAvailability.shared
 
     var body: some View {
         TabView {
@@ -40,7 +41,7 @@ struct SettingsView: View {
             }
             ForEach(AIProviderKind.allCases) { kind in
                 LabeledContent(kind.displayName) {
-                    if kind.isInstalled {
+                    if availability.isInstalled(kind) {
                         Label("Installed", systemImage: "checkmark.circle.fill")
                             .foregroundStyle(.green)
                     } else {
@@ -51,6 +52,7 @@ struct SettingsView: View {
             }
         }
         .padding(20)
+        .onAppear { availability.refresh() }
     }
 
     private var dataTab: some View {

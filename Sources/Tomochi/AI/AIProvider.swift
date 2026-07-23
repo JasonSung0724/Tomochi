@@ -38,7 +38,8 @@ enum AIProviderKind: String, CaseIterable, Identifiable, Codable {
         return nil
     }
 
-    var isInstalled: Bool {
+    /// Blocking check — call off the main thread (see `AIAvailability`).
+    func detectInstalled() -> Bool {
         if executableURL != nil { return true }
         let p = Process()
         p.executableURL = URL(fileURLWithPath: "/usr/bin/which")
@@ -75,6 +76,34 @@ enum AIProviderKind: String, CaseIterable, Identifiable, Codable {
             args.append(prompt)
             return args
         }
+    }
+}
+
+/// Cached, off-main-thread CLI detection. `which` can take tens of
+/// milliseconds; running it during view rendering caused visible jank.
+@MainActor
+final class AIAvailability: ObservableObject {
+    static let shared = AIAvailability()
+
+    @Published private(set) var installed: Set<AIProviderKind> = []
+    @Published private(set) var hasChecked = false
+
+    private init() {
+        refresh()
+    }
+
+    func refresh() {
+        Task.detached(priority: .utility) {
+            let found = Set(AIProviderKind.allCases.filter { $0.detectInstalled() })
+            await MainActor.run {
+                self.installed = found
+                self.hasChecked = true
+            }
+        }
+    }
+
+    func isInstalled(_ kind: AIProviderKind) -> Bool {
+        installed.contains(kind)
     }
 }
 

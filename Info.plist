@@ -8,8 +8,8 @@
 	<key>CFBundleExecutable</key><string>Tomochi</string>
 	<key>CFBundleIconFile</key><string>AppIcon</string>
 	<key>CFBundlePackageType</key><string>APPL</string>
-	<key>CFBundleShortVersionString</key><string>0.1.3</string>
-	<key>CFBundleVersion</key><string>0.1.3</string>
+	<key>CFBundleShortVersionString</key><string>0.1.4</string>
+	<key>CFBundleVersion</key><string>0.1.4</string>
 	<key>SUFeedURL</key><string>https://github.com/JasonSung0724/Tomochi/releases/latest/download/appcast.xml</string>
 	<key>SUPublicEDKey</key><string>WGwpRhAwP8hyl+1txsHCPUFRjBeeMN7N60+1JffW9+w=</string>
 	<key>SUEnableAutomaticChecks</key><true/>

@@ -5,21 +5,42 @@ struct PomodoroBar: View {
     @EnvironmentObject var pomodoro: PomodoroTimer
     @Binding var showFull: Bool
 
+    private var phaseColor: Color {
+        pomodoro.phase == .work ? Theme.accent : .green
+    }
+
     var body: some View {
         HStack(spacing: 12) {
             Button {
                 showFull = true
             } label: {
-                HStack(spacing: 8) {
-                    Image(systemName: "timer")
-                    Text("\(pomodoro.phase.label) \(pomodoro.remainingText)")
-                        .font(.system(.body, design: .monospaced))
+                HStack(spacing: 7) {
+                    ZStack {
+                        Circle()
+                            .stroke(phaseColor.opacity(0.25), lineWidth: 3)
+                        Circle()
+                            .trim(from: 0, to: pomodoro.progress)
+                            .stroke(phaseColor, style: StrokeStyle(lineWidth: 3, lineCap: .round))
+                            .rotationEffect(.degrees(-90))
+                    }
+                    .frame(width: 15, height: 15)
+                    Text(pomodoro.phase.label)
+                        .font(.system(.callout, design: .rounded, weight: .medium))
+                        .foregroundStyle(.secondary)
+                    Text(pomodoro.remainingText)
+                        .font(.system(.callout, design: .monospaced, weight: .semibold))
+                        .monospacedDigit()
+                        .foregroundStyle(phaseColor)
                 }
+                .padding(.horizontal, 11)
+                .padding(.vertical, 5)
+                .background(phaseColor.opacity(0.10), in: Capsule())
             }
             .buttonStyle(.plain)
+            .help("Open the timer")
 
             if let todo = pomodoro.linkedTodo {
-                Text("→ \(todo.title)")
+                Label(todo.title, systemImage: "scope")
                     .font(.callout)
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
@@ -27,14 +48,12 @@ struct PomodoroBar: View {
 
             Spacer()
 
-            ProgressView(value: pomodoro.progress)
-                .frame(width: 120)
-
             if pomodoro.isRunning {
                 Button("Pause") { pomodoro.pause() }
             } else {
                 Button("Start") { pomodoro.start() }
                     .buttonStyle(.borderedProminent)
+                    .tint(Theme.accent)
             }
             Button {
                 pomodoro.reset()
@@ -60,7 +79,7 @@ struct PomodoroView: View {
         VStack(spacing: 18) {
             Text(pomodoro.phase.label)
                 .font(.headline)
-                .foregroundStyle(pomodoro.phase == .work ? .red : .green)
+                .foregroundStyle(pomodoro.phase == .work ? Theme.accent : .green)
 
             ZStack {
                 Circle()
@@ -68,7 +87,7 @@ struct PomodoroView: View {
                 Circle()
                     .trim(from: 0, to: pomodoro.progress)
                     .stroke(
-                        pomodoro.phase == .work ? Color.red : Color.green,
+                        pomodoro.phase == .work ? Theme.accent : Color.green,
                         style: StrokeStyle(lineWidth: 10, lineCap: .round)
                     )
                     .rotationEffect(.degrees(-90))
