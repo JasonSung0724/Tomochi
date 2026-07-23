@@ -5,7 +5,7 @@ import Foundation
 /// for editing it, and the auto-learning loop via memory/MEMORY.md.
 enum WorkspacePrimer {
     /// Bump when INSTRUCTIONS changes so existing workspaces get the update.
-    private static let version = 5
+    private static let version = 6
     private static let versionKey = "workspacePrimerVersion"
 
     static func primeIfNeeded() {
@@ -84,6 +84,34 @@ enum WorkspacePrimer {
     Pomodoro records written by the app. You normally only read it to answer
     stats questions (kind is work / shortBreak / longBreak).
 
+    ### data/calendar.json (READ-ONLY mirror)
+    The app mirrors the user's macOS/Google calendar here (-7 to +30 days).
+    Read it to answer schedule questions ("what's on tomorrow?"). **Never edit
+    this file** — the app overwrites it.
+
+    ### data/calendar-outbox.json (calendar WRITE requests)
+    To create real calendar events (synced to Google via macOS Calendar),
+    append to `requests` — the app picks them up, creates the events, empties
+    the list, and refreshes the mirror:
+    ```json
+    {
+      "version": 1,
+      "requests": [
+        {
+          "title": "Dentist",
+          "startDate": "2026-07-24T15:00:00Z",
+          "endDate": "2026-07-24T16:00:00Z",
+          "isAllDay": false,
+          "notes": "optional",
+          "location": "optional"
+        }
+      ]
+    }
+    ```
+    `endDate` defaults to one hour after start. If the mirror doesn't show the
+    event afterwards, the user hasn't granted calendar access — tell them to
+    open the Calendar tab in Tomochi.
+
     ### notes/
     Markdown notes, one file each. Use short kebab-case filenames
     (e.g. `meeting-notes.md`).
@@ -113,6 +141,9 @@ enum WorkspacePrimer {
     1. **Actionable items** → `data/todos.json`, each categorized (consult
        MEMORY.md and existing categories), with `priority` and `dueDate`
        whenever a time is stated or implied.
+    1b. **Fixed appointments** (meetings, calls, bookings with a set time)
+       → `data/calendar-outbox.json` so they land on the real calendar; add a
+       todo as well only when there's preparation work to do.
     2. **Reference knowledge** (decisions, facts, links, background, specs)
        → the knowledge base in `notes/`: one topic per file, kebab-case
        filename, clear `#` heading. If a note on that topic already exists,

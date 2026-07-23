@@ -17,6 +17,8 @@ enum Paths {
     static var attachmentsDir: URL { workspace.appendingPathComponent("attachments", isDirectory: true) }
 
     static var todosFile: URL { dataDir.appendingPathComponent("todos.json") }
+    static var calendarMirrorFile: URL { dataDir.appendingPathComponent("calendar.json") }
+    static var calendarOutboxFile: URL { dataDir.appendingPathComponent("calendar-outbox.json") }
     static var categoriesFile: URL { dataDir.appendingPathComponent("categories.json") }
     static var sessionsFile: URL { dataDir.appendingPathComponent("sessions.json") }
     static var memoryFile: URL { memoryDir.appendingPathComponent("MEMORY.md") }

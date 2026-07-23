@@ -23,6 +23,8 @@ struct SidebarView: View {
                     .tag(SidebarItem.completed)
                 Label("Notes", systemImage: "note.text")
                     .tag(SidebarItem.notes)
+                Label("Calendar", systemImage: "calendar")
+                    .tag(SidebarItem.calendar)
             }
             Section("Categories") {
                 ForEach(store.categories) { category in

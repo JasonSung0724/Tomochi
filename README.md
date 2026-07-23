@@ -20,6 +20,10 @@ your habits the more you use it.
 - 🐱 **Pomodoro timer** — menu-bar cat countdown, task-linked sessions, daily focus stats
 - 📝 **Notes** — Markdown notes with drag-and-drop image attachments, readable
   and writable by the AI too
+- 📅 **Calendar** — your macOS/Google calendar beside your tasks; the AI reads
+  your schedule and adds events through a file-bridge (no Google OAuth needed —
+  sync rides on the account in macOS Calendar)
+- 🔍 **Search** — one toolbar field across tasks and note contents
 - ✨ **AI assistant** — "I need to finish the report and buy cat food" → tasks
   created, categorized, and scheduled for you
 - 🧠 **Self-learning** — the AI records your categorization habits in a memory
@@ -82,6 +86,8 @@ itself in place.
   stores API keys.
 - **Notifications** (optional) — asked on first launch, used for pomodoro
   phase changes.
+- **Calendar** (optional) — asked only when you open the Calendar tab. Because
+  releases are ad-hoc signed, macOS may re-ask after an app update.
 - All data stays in `~/Library/Application Support/Tomochi/workspace` as plain
   files. Nothing is uploaded anywhere by Tomochi.
 
@@ -111,8 +117,6 @@ edits the files, the file watcher reloads the UI instantly.
 Focused on what actually helps office workers and students get things done:
 
 **Planning & time**
-- Calendar view with system-calendar (EventKit) overlay — Google Calendar sync
-  via your macOS calendar account
 - "Plan my day": AI turns your task list into a realistic time-blocked schedule
 - Recurring tasks and natural-language quick add ("standup every weekday 9:30")
 - Global quick-capture hotkey — jot a task from any app without switching

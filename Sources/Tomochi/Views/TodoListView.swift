@@ -60,6 +60,7 @@ struct TodoListView: View {
         case .today: return "Today"
         case .completed: return "Completed"
         case .notes: return "Notes"
+        case .calendar: return "Calendar"
         case .category(let id):
             return store.categories.first { $0.id == id }?.name ?? "Category"
         }
@@ -75,7 +76,7 @@ struct TodoListView: View {
                 guard !todo.isCompleted, let due = todo.dueDate else { return false }
                 return Calendar.current.isDateInToday(due) || due < Date()
             }
-        case .completed, .notes:
+        case .completed, .notes, .calendar:
             return store.todos
                 .filter(\.isCompleted)
                 .sorted { ($0.completedAt ?? .distantPast) > ($1.completedAt ?? .distantPast) }

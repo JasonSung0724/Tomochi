@@ -9,6 +9,7 @@ struct TomochiApp: App {
     @StateObject private var pomodoro: PomodoroTimer
     @StateObject private var chat: AIChatModel
     @StateObject private var notesStore: NotesStore
+    @StateObject private var calendarStore: CalendarStore
 
     init() {
         let store = DataStore()
@@ -16,6 +17,7 @@ struct TomochiApp: App {
         _pomodoro = StateObject(wrappedValue: PomodoroTimer(store: store))
         _chat = StateObject(wrappedValue: AIChatModel(store: store))
         _notesStore = StateObject(wrappedValue: NotesStore())
+        _calendarStore = StateObject(wrappedValue: CalendarStore())
     }
 
     var body: some Scene {
@@ -25,6 +27,7 @@ struct TomochiApp: App {
                 .environmentObject(pomodoro)
                 .environmentObject(chat)
                 .environmentObject(notesStore)
+                .environmentObject(calendarStore)
                 .frame(minWidth: 760, minHeight: 480)
         }
         .defaultSize(width: 1080, height: 680)

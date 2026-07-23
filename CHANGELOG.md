@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.1.6
+
+- Calendar tab: month picker plus a day agenda showing calendar events and
+  tasks due that day; create events in-app (syncs to Google via macOS
+  Calendar accounts)
+- AI calendar bridge: the schedule is mirrored to data/calendar.json for the
+  AI to read, and events the AI writes to data/calendar-outbox.json become
+  real calendar entries
+- Calendar access is requested only when you open the Calendar tab
+
 ## 0.1.5
 
 - Fixed broken window layout (Notes pane collapsing to the bottom, skewed
