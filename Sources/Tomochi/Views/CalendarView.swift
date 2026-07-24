@@ -8,7 +8,7 @@ struct CalendarView: View {
 
     var body: some View {
         HStack(spacing: 0) {
-            VStack(alignment: .leading, spacing: 12) {
+            VStack(alignment: .leading, spacing: 14) {
                 DatePicker(
                     "",
                     selection: $calendar.selectedDate,
@@ -16,7 +16,29 @@ struct CalendarView: View {
                 )
                 .datePickerStyle(.graphical)
                 .labelsHidden()
-                Spacer()
+
+                if calendar.auth == .authorized {
+                    Divider()
+                    Text("Upcoming")
+                        .font(.system(.caption, design: .rounded, weight: .semibold))
+                        .foregroundStyle(.secondary)
+                    if calendar.upcomingEvents.isEmpty {
+                        Text("Nothing in the next 7 days")
+                            .font(.caption)
+                            .foregroundStyle(.tertiary)
+                    } else {
+                        ScrollView {
+                            VStack(alignment: .leading, spacing: 6) {
+                                ForEach(calendar.upcomingEvents, id: \.eventIdentifier) { event in
+                                    UpcomingRow(event: event) {
+                                        calendar.selectedDate = event.startDate
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                Spacer(minLength: 0)
             }
             .padding(14)
             .frame(width: 280)
@@ -63,16 +85,32 @@ struct CalendarView: View {
 
     private var authorizedAgenda: some View {
         VStack(spacing: 0) {
-            HStack {
+            HStack(spacing: 10) {
                 Text(calendar.selectedDate.formatted(.dateTime.weekday(.wide).month().day()))
                     .font(.system(.title3, design: .rounded, weight: .semibold))
+                if Calendar.current.isDateInToday(calendar.selectedDate) {
+                    Text("Today")
+                        .font(.caption.weight(.semibold))
+                        .padding(.horizontal, 7)
+                        .padding(.vertical, 2)
+                        .background(Theme.accent.opacity(0.15), in: Capsule())
+                        .foregroundStyle(Theme.accent)
+                }
                 Spacer()
+                HStack(spacing: 2) {
+                    Button { shift(-1) } label: { Image(systemName: "chevron.left") }
+                    Button("Today") { calendar.selectedDate = Date() }
+                    Button { shift(1) } label: { Image(systemName: "chevron.right") }
+                }
+                .controlSize(.small)
                 Button {
                     showAddEvent = true
                 } label: {
                     Label("New Event", systemImage: "plus")
                 }
                 .controlSize(.small)
+                .buttonStyle(.borderedProminent)
+                .tint(Theme.accent)
             }
             .padding(12)
             Divider()
@@ -137,6 +175,43 @@ struct CalendarView: View {
             AddEventForm(defaultDate: calendar.selectedDate)
                 .environmentObject(calendar)
         }
+    }
+
+    private func shift(_ days: Int) {
+        if let d = Calendar.current.date(byAdding: .day, value: days, to: calendar.selectedDate) {
+            calendar.selectedDate = d
+        }
+    }
+}
+
+private struct UpcomingRow: View {
+    let event: EKEvent
+    let action: () -> Void
+    @State private var hovering = false
+
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 8) {
+                Capsule()
+                    .fill(event.displayColor)
+                    .frame(width: 3, height: 26)
+                VStack(alignment: .leading, spacing: 1) {
+                    Text(event.title ?? "")
+                        .font(.system(.caption, design: .rounded, weight: .medium))
+                        .lineLimit(1)
+                    Text(event.startDate.formatted(.dateTime.weekday(.abbreviated).day().hour().minute()))
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                }
+                Spacer(minLength: 0)
+            }
+            .padding(4)
+            .background(hovering ? Color.primary.opacity(0.05) : .clear,
+                        in: RoundedRectangle(cornerRadius: 6))
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .onHover { hovering = $0 }
     }
 }
 

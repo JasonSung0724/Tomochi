@@ -7,9 +7,14 @@ struct AIChatView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            HStack {
-                Label("AI", systemImage: "sparkles")
-                    .font(.headline)
+            HStack(spacing: 8) {
+                Image(systemName: "cat.fill")
+                    .font(.system(size: 11, weight: .bold))
+                    .foregroundStyle(.white)
+                    .frame(width: 22, height: 22)
+                    .background(Theme.accent.gradient, in: RoundedRectangle(cornerRadius: 6))
+                Text("Assistant")
+                    .font(.system(.headline, design: .rounded))
                 Spacer()
                 Picker("", selection: $chat.provider) {
                     ForEach(AIProviderKind.allCases) { kind in
@@ -17,7 +22,7 @@ struct AIChatView: View {
                     }
                 }
                 .labelsHidden()
-                .frame(width: 140)
+                .frame(width: 130)
                 Button {
                     chat.newConversation()
                 } label: {
@@ -33,10 +38,25 @@ struct AIChatView: View {
                 ScrollView {
                     LazyVStack(alignment: .leading, spacing: 10) {
                         if chat.messages.isEmpty {
-                            Text("Ask the AI to manage your tasks:\n“Add ‘quarterly report’ to Work, due Friday”")
-                                .font(.callout)
-                                .foregroundStyle(.secondary)
-                                .padding(.top, 8)
+                            VStack(alignment: .leading, spacing: 8) {
+                                Text("Tell me what's on your plate — I'll file tasks, take notes, and schedule events.")
+                                    .font(.callout)
+                                    .foregroundStyle(.secondary)
+                                ForEach([
+                                    "Add ‘quarterly report’ to Work, due Friday",
+                                    "What's on my calendar tomorrow?",
+                                    "Organize this: …paste anything…",
+                                ], id: \.self) { example in
+                                    Text("“\(example)”")
+                                        .font(.caption)
+                                        .padding(.horizontal, 9)
+                                        .padding(.vertical, 5)
+                                        .frame(maxWidth: .infinity, alignment: .leading)
+                                        .background(Theme.accent.opacity(0.08),
+                                                    in: RoundedRectangle(cornerRadius: 8))
+                                }
+                            }
+                            .padding(.top, 6)
                         }
                         ForEach(chat.messages) { message in
                             ChatBubble(message: message)
@@ -68,8 +88,8 @@ struct AIChatView: View {
 
             Divider()
 
-            HStack(alignment: .bottom) {
-                TextField("Ask AI…", text: $input, axis: .vertical)
+            HStack(alignment: .bottom, spacing: 8) {
+                TextField("Ask anything…", text: $input, axis: .vertical)
                     .textFieldStyle(.plain)
                     .lineLimit(1...5)
                     .focused($inputFocused)
@@ -77,10 +97,25 @@ struct AIChatView: View {
                 Button(action: send) {
                     Image(systemName: "arrow.up.circle.fill")
                         .font(.title2)
+                        .foregroundStyle(
+                            input.trimmingCharacters(in: .whitespaces).isEmpty
+                                ? AnyShapeStyle(.tertiary)
+                                : AnyShapeStyle(Theme.accent)
+                        )
                 }
                 .buttonStyle(.plain)
                 .disabled(chat.isRunning || input.trimmingCharacters(in: .whitespaces).isEmpty)
             }
+            .padding(.horizontal, 11)
+            .padding(.vertical, 8)
+            .background(
+                RoundedRectangle(cornerRadius: 10)
+                    .fill(Theme.cardBackground)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 10)
+                    .strokeBorder(inputFocused ? Theme.accent.opacity(0.45) : Theme.hairline)
+            )
             .padding(10)
         }
         .onAppear { inputFocused = true }

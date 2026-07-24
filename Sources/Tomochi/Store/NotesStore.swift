@@ -4,6 +4,7 @@ import Combine
 struct Note: Identifiable, Equatable {
     let filename: String
     var title: String
+    var snippet: String
     var modifiedAt: Date
 
     var id: String { filename }
@@ -38,25 +39,38 @@ final class NotesStore: ObservableObject {
             .map { url in
                 let modified = (try? url.resourceValues(forKeys: [.contentModificationDateKey])
                     .contentModificationDate) ?? .distantPast
+                let (title, snippet) = Self.preview(of: url)
                 return Note(
                     filename: url.lastPathComponent,
-                    title: Self.title(of: url),
+                    title: title,
+                    snippet: snippet,
                     modifiedAt: modified
                 )
             }
             .sorted { $0.modifiedAt > $1.modifiedAt }
     }
 
-    /// First markdown heading, else first non-empty line, else the filename.
-    private static func title(of url: URL) -> String {
+    /// Title = first heading/non-empty line; snippet = the next content line.
+    private static func preview(of url: URL) -> (title: String, snippet: String) {
+        let fallback = url.deletingPathExtension().lastPathComponent
         guard let content = try? String(contentsOf: url, encoding: .utf8) else {
-            return url.deletingPathExtension().lastPathComponent
+            return (fallback, "")
         }
-        for line in content.split(separator: "\n", omittingEmptySubsequences: true) {
-            let text = line.trimmingCharacters(in: CharacterSet(charactersIn: "# ").union(.whitespaces))
-            if !text.isEmpty { return text }
+        let strip: (Substring) -> String = {
+            $0.trimmingCharacters(in: CharacterSet(charactersIn: "#-*> ").union(.whitespaces))
         }
-        return url.deletingPathExtension().lastPathComponent
+        let lines = content.split(separator: "\n", omittingEmptySubsequences: true)
+        var title: String?
+        for line in lines {
+            let text = strip(line)
+            if text.isEmpty { continue }
+            if title == nil {
+                title = text
+            } else {
+                return (title ?? fallback, String(text.prefix(80)))
+            }
+        }
+        return (title ?? fallback, "")
     }
 
     func content(of note: Note) -> String {
@@ -71,7 +85,9 @@ final class NotesStore: ObservableObject {
         if let i = notes.firstIndex(where: { $0.filename == filename }) {
             notes[i].modifiedAt = Date()
             let url = Paths.notesDir.appendingPathComponent(filename)
-            notes[i].title = Self.title(of: url)
+            let (title, snippet) = Self.preview(of: url)
+            notes[i].title = title
+            notes[i].snippet = snippet
         }
     }
 
@@ -84,7 +100,7 @@ final class NotesStore: ObservableObject {
             n += 1
         }
         save(filename: filename, content: "# New note\n\n")
-        let note = Note(filename: filename, title: "New note", modifiedAt: Date())
+        let note = Note(filename: filename, title: "New note", snippet: "", modifiedAt: Date())
         notes.insert(note, at: 0)
         return note
     }

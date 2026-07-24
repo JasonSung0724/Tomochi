@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.1.7
+
+- Sidebar rebuilt as custom rows: every item is now reliably clickable, with
+  a consistent colored icon-tile language, hover feedback, and clear selection
+- Calendar: upcoming-7-days rail under the month picker, day navigation
+  (‹ Today ›), prominent New Event button
+- Notes: content preview line in the list, accent selection, roomier editor
+- Assistant panel: cat avatar, example prompts, refined input field
+
 ## 0.1.6
 
 - Calendar tab: month picker plus a day agenda showing calendar events and

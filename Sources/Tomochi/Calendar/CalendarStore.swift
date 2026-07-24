@@ -52,6 +52,7 @@ final class CalendarStore: ObservableObject {
     @Published var auth: AuthState = .unknown
     @Published var selectedDate = Date()
     @Published var dayEvents: [EKEvent] = []
+    @Published var upcomingEvents: [EKEvent] = []
     @Published var lastError: String?
 
     private let eventStore = EKEventStore()
@@ -122,8 +123,22 @@ final class CalendarStore: ObservableObject {
     func refresh() {
         guard auth == .authorized else { return }
         loadDayEvents(for: selectedDate)
+        loadUpcoming()
         exportMirror()
         processOutbox()
+    }
+
+    /// The next 7 days (excluding today), for the sidebar rail.
+    private func loadUpcoming() {
+        let cal = Calendar.current
+        guard let start = cal.date(byAdding: .day, value: 1, to: cal.startOfDay(for: Date())),
+              let end = cal.date(byAdding: .day, value: 7, to: start) else { return }
+        let predicate = eventStore.predicateForEvents(withStart: start, end: end, calendars: nil)
+        upcomingEvents = Array(
+            eventStore.events(matching: predicate)
+                .sorted { $0.startDate < $1.startDate }
+                .prefix(8)
+        )
     }
 
     private func loadDayEvents(for date: Date) {

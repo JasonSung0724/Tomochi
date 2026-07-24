@@ -93,9 +93,11 @@ struct NotesView: View {
                 .padding(.vertical, 8)
                 Divider()
                 TextEditor(text: $content)
-                    .font(.system(.body, design: .monospaced))
+                    .font(.system(size: 14, design: .monospaced))
+                    .lineSpacing(4)
                     .scrollContentBackground(.hidden)
-                    .padding(8)
+                    .padding(.horizontal, 18)
+                    .padding(.vertical, 12)
                     .onChange(of: content) { scheduleSave() }
                     .onDrop(of: [.fileURL], isTargeted: nil) { providers in
                         handleDrop(providers)
@@ -164,22 +166,39 @@ struct NotesView: View {
 private struct NoteRow: View {
     let note: Note
     let isSelected: Bool
+    @State private var hovering = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 3) {
             Text(note.title)
-                .fontWeight(.medium)
+                .font(.system(.body, design: .rounded, weight: .medium))
                 .lineLimit(1)
+            if !note.snippet.isEmpty {
+                Text(note.snippet)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+            }
             Text(note.modifiedAt.formatted(.dateTime.month().day().hour().minute()))
                 .font(.caption2)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(.tertiary)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(8)
+        .padding(9)
         .background(
             RoundedRectangle(cornerRadius: 8)
-                .fill(isSelected ? Color.accentColor.opacity(0.15) : Color.clear)
+                .fill(isSelected ? Theme.accent.opacity(0.16)
+                      : hovering ? Color.primary.opacity(0.05) : .clear)
         )
+        .overlay(alignment: .leading) {
+            if isSelected {
+                Capsule()
+                    .fill(Theme.accent)
+                    .frame(width: 3)
+                    .padding(.vertical, 7)
+            }
+        }
         .contentShape(Rectangle())
+        .onHover { hovering = $0 }
     }
 }
